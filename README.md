@@ -4,6 +4,9 @@ A comprehensive Node.js backend application for a gamification system with team 
 
 ---
 
+## the front-end repo url : https://github.com/Abdellahi-yuki/poduim-front-end.git
+## the front-end url: https://poduim-front-end.vercel.app
+
 ## 📋 Table of Contents
 
 - [Features](#features)
