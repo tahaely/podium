@@ -33,7 +33,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static folder for uploads
+// Dossier statique pour les uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
@@ -43,16 +43,16 @@ app.use('/api/members', memberRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
-// Root route
+// Route racine
 app.get('/', (req, res) => {
-    res.send('Gamification API is running...');
+    res.send('API de Gamification en cours d\'exécution...');
 });
 
-// Error Handling Middleware
+// Middleware de gestion des erreurs
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({
-        message: err.message || 'Internal Server Error',
+        message: err.message || 'Erreur interne du serveur',
         stack: process.env.NODE_ENV === 'production' ? null : err.stack,
     });
 });

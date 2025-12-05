@@ -1,14 +1,14 @@
 const http = require('http');
 const app = require('./app');
-const { initWebSocket } = require('./config/socket');
+const { initialiserWebSocket } = require('./config/socket');
 
-const server = http.createServer(app);
+const serveur = http.createServer(app);
 
-// Initialize WebSocket
-initWebSocket(server);
+// Initialiser WebSocket
+initialiserWebSocket(serveur);
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+serveur.listen(PORT, () => {
+    console.log(`Serveur en cours d'exécution en mode ${process.env.NODE_ENV} sur le port ${PORT}`);
 });

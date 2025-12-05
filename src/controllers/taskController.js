@@ -1,71 +1,63 @@
-const taskService = require('../services/taskService');
+const serviceTache = require('../services/taskService');
 
-const createTask = async (req, res) => {
+const creerTache = async (req, res) => {
     try {
-        const task = await taskService.createTask(req.body);
-        res.status(201).json(task);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const tache = await serviceTache.creerTache(req.body);
+        res.status(201).json(tache);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const updateTask = async (req, res) => {
+const modifierTache = async (req, res) => {
     try {
-        const updates = { ...req.body };
+        const misesAJour = { ...req.body };
 
-        // If status is changing to 'doing', assign the current user
-        if (updates.status === 'doing' && req.user && req.user.id) {
-            // We need to get the member_id associated with this user
-            // This assumes the user is a member. Ideally, we should look up the member_id.
-            // However, looking at the schema, members table links user_id.
-            // Let's pass the user_id to the service to handle the lookup or pass member_id if available in token.
-            // The token has { id, email, role }. It doesn't seem to have member_id directly.
-            // But let's check authService/login again.
-            // Login stores: { id: response.data.id ... } which is the USER id.
-            // So we need to find the member_id for this user_id.
-
-            // Actually, let's look at how we can get the member_id.
-            // The service layer might be a better place for this logic if we need a DB lookup.
-            // Let's pass the user_id to the service.
-            updates.user_id = req.user.id;
+        // Si le statut change à 'doing', assigner l'utilisateur actuel
+        if (misesAJour.status === 'doing' && req.user && req.user.id) {
+            // Nous devons obtenir le member_id associé à cet utilisateur
+            // Cela suppose que l'utilisateur est un membre. Idéalement, nous devrions rechercher le member_id.
+            // Cependant, en regardant le schéma, la table members lie user_id.
+            // Passons le user_id au service pour gérer la recherche.
+            misesAJour.user_id = req.user.id;
         }
 
-        const task = await taskService.updateTask(req.params.id, updates);
-        res.json(task);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const tache = await serviceTache.modifierTache(req.params.id, misesAJour);
+        res.json(tache);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const uploadProof = async (req, res) => {
+const televerserPreuve = async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
+            return res.status(400).json({ message: 'Aucun fichier téléversé' });
         }
-        const proofUrl = `/uploads/${req.file.filename}`;
-        const task = await taskService.uploadProof(req.params.id, proofUrl);
-        res.json(task);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const urlPreuve = `/uploads/${req.file.filename}`;
+        const tache = await serviceTache.televerserPreuve(req.params.id, urlPreuve);
+        res.json(tache);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const validateTask = async (req, res) => {
+const validerTache = async (req, res) => {
     try {
-        const result = await taskService.validateTask(req.params.id);
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const resultat = await serviceTache.validerTache(req.params.id);
+        res.json(resultat);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const getTasks = async (req, res) => {
+const obtenirTaches = async (req, res) => {
     try {
-        const tasks = await taskService.getTasks(req.query);
-        res.json(tasks);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const taches = await serviceTache.obtenirTaches(req.query);
+        res.json(taches);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-module.exports = { createTask, updateTask, uploadProof, validateTask, getTasks };
+module.exports = { creerTache, modifierTache, televerserPreuve, validerTache, obtenirTaches };

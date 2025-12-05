@@ -2,29 +2,29 @@ const WebSocket = require('ws');
 
 let wss;
 
-const initWebSocket = (server) => {
-    wss = new WebSocket.Server({ server });
+const initialiserWebSocket = (serveur) => {
+    wss = new WebSocket.Server({ server: serveur });
 
     wss.on('connection', (ws) => {
-        console.log('New WebSocket connection');
+        console.log('Nouvelle connexion WebSocket');
 
         ws.on('message', (message) => {
-            console.log('received: %s', message);
+            console.log('reçu: %s', message);
         });
 
-        ws.send(JSON.stringify({ type: 'WELCOME', message: 'Connected to Gamification WebSocket' }));
+        ws.send(JSON.stringify({ type: 'BIENVENUE', message: 'Connecté au WebSocket de Gamification' }));
     });
 
-    console.log('✅ WebSocket Server initialized');
+    console.log('✅ Serveur WebSocket initialisé');
 };
 
-const broadcast = (data) => {
+const diffuser = (donnees) => {
     if (!wss) return;
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
+            client.send(JSON.stringify(donnees));
         }
     });
 };
 
-module.exports = { initWebSocket, broadcast };
+module.exports = { initialiserWebSocket, diffuser };

@@ -1,51 +1,51 @@
-const teamService = require('../services/teamService');
+const serviceEquipe = require('../services/teamService');
 
-const createTeam = async (req, res) => {
+const creerEquipe = async (req, res) => {
     try {
         const { name, color } = req.body;
-        const team = await teamService.createTeam(name, color);
-        res.status(201).json(team);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const equipe = await serviceEquipe.creerEquipe(name, color);
+        res.status(201).json(equipe);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const getTeams = async (req, res) => {
+const obtenirEquipes = async (req, res) => {
     try {
-        const teams = await teamService.getAllTeams();
-        res.json(teams);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const equipes = await serviceEquipe.obtenirToutesLesEquipes();
+        res.json(equipes);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const getTeam = async (req, res) => {
+const obtenirEquipe = async (req, res) => {
     try {
-        const team = await teamService.getTeamById(req.params.id);
-        if (!team) return res.status(404).json({ message: 'Team not found' });
-        res.json(team);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const equipe = await serviceEquipe.obtenirEquipeParId(req.params.id);
+        if (!equipe) return res.status(404).json({ message: 'Équipe non trouvée' });
+        res.json(equipe);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const updateTeam = async (req, res) => {
+const modifierEquipe = async (req, res) => {
     try {
         const { name, color } = req.body;
-        const team = await teamService.updateTeam(req.params.id, name, color);
-        res.json(team);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const equipe = await serviceEquipe.modifierEquipe(req.params.id, name, color);
+        res.json(equipe);
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-const deleteTeam = async (req, res) => {
+const supprimerEquipe = async (req, res) => {
     try {
-        await teamService.deleteTeam(req.params.id);
-        res.json({ message: 'Team removed' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        await serviceEquipe.supprimerEquipe(req.params.id);
+        res.json({ message: 'Équipe supprimée' });
+    } catch (erreur) {
+        res.status(500).json({ message: erreur.message });
     }
 };
 
-module.exports = { createTeam, getTeams, getTeam, updateTeam, deleteTeam };
+module.exports = { creerEquipe, obtenirEquipes, obtenirEquipe, modifierEquipe, supprimerEquipe };

@@ -1,16 +1,16 @@
 const express = require('express');
-const teamController = require('../controllers/teamController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const controleurEquipe = require('../controllers/teamController');
+const { proteger, admin } = require('../middleware/authMiddleware');
 
-const router = express.Router();
+const routeur = express.Router();
 
-router.route('/')
-    .get(protect, teamController.getTeams)
-    .post(protect, admin, teamController.createTeam);
+routeur.route('/')
+    .get(proteger, controleurEquipe.obtenirEquipes)
+    .post(proteger, admin, controleurEquipe.creerEquipe);
 
-router.route('/:id')
-    .get(protect, teamController.getTeam)
-    .put(protect, admin, teamController.updateTeam)
-    .delete(protect, admin, teamController.deleteTeam);
+routeur.route('/:id')
+    .get(proteger, controleurEquipe.obtenirEquipe)
+    .put(proteger, admin, controleurEquipe.modifierEquipe)
+    .delete(proteger, admin, controleurEquipe.supprimerEquipe);
 
-module.exports = router;
+module.exports = routeur;

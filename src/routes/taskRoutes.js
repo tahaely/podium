@@ -1,16 +1,16 @@
 const express = require('express');
-const taskController = require('../controllers/taskController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const controleurTache = require('../controllers/taskController');
+const { proteger, admin } = require('../middleware/authMiddleware');
 
-const router = express.Router();
+const routeur = express.Router();
 
-router.route('/')
-    .get(protect, taskController.getTasks)
-    .post(protect, admin, taskController.createTask);
+routeur.route('/')
+    .get(proteger, controleurTache.obtenirTaches)
+    .post(proteger, admin, controleurTache.creerTache);
 
-router.route('/:id')
-    .put(protect, taskController.updateTask); // Members can update status to 'doing' etc.
+routeur.route('/:id')
+    .put(proteger, controleurTache.modifierTache); // Les membres peuvent mettre à jour le statut à 'doing' etc.
 
-router.put('/:id/validate', protect, admin, taskController.validateTask);
+routeur.put('/:id/valider', proteger, admin, controleurTache.validerTache);
 
-module.exports = router;
+module.exports = routeur;

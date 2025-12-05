@@ -1,120 +1,120 @@
 const db = require('../config/db');
-const scoringService = require('./scoringService');
-const { broadcast } = require('../config/socket');
+const serviceDePoints = require('./scoringService');
+const { diffuser } = require('../config/socket');
 
-const createTask = async (data) => {
-    const { team_id, member_id, title, description, points, difficulty, priority, deadline } = data;
-    const [result] = await db.query(
+const creerTache = async (donnees) => {
+    const { team_id, member_id, title, description, points, difficulty, priority, deadline } = donnees;
+    const [resultat] = await db.query(
         `INSERT INTO tasks (team_id, member_id, title, description, points, difficulty, priority, deadline) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [team_id, member_id, title, description, points, difficulty, priority, deadline]
     );
-    return { id: result.insertId, ...data };
+    return { id: resultat.insertId, ...donnees };
 };
 
-const updateTask = async (id, data) => {
-    const fields = [];
-    const values = [];
+const modifierTache = async (id, donnees) => {
+    const champs = [];
+    const valeurs = [];
 
-    // Handle member assignment if user_id is provided
-    if (data.user_id) {
-        // Find member_id for this user
-        const [members] = await db.query('SELECT id FROM members WHERE user_id = ?', [data.user_id]);
-        if (members.length > 0) {
-            data.member_id = members[0].id;
+    // Gérer l'affectation du membre si user_id est fourni
+    if (donnees.user_id) {
+        // Trouver member_id pour cet utilisateur
+        const [membres] = await db.query('SELECT id FROM members WHERE user_id = ?', [donnees.user_id]);
+        if (membres.length > 0) {
+            donnees.member_id = membres[0].id;
         }
-        delete data.user_id; // Remove from data to avoid column error
+        delete donnees.user_id; // Retirer de données pour éviter erreur de colonne
     }
 
-    for (const [key, value] of Object.entries(data)) {
-        fields.push(`${key} = ?`);
-        values.push(value);
+    for (const [cle, valeur] of Object.entries(donnees)) {
+        champs.push(`${cle} = ?`);
+        valeurs.push(valeur);
     }
-    values.push(id);
+    valeurs.push(id);
 
-    if (fields.length > 0) {
-        await db.query(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, values);
+    if (champs.length > 0) {
+        await db.query(`UPDATE tasks SET ${champs.join(', ')} WHERE id = ?`, valeurs);
     }
 
-    return { id, ...data };
+    return { id, ...donnees };
 };
 
-const uploadProof = async (id, proofUrl) => {
-    await db.query('UPDATE tasks SET proof_url = ?, status = ? WHERE id = ?', [proofUrl, 'done', id]);
-    return { id, proof_url: proofUrl, status: 'done' };
+const televerserPreuve = async (id, urlPreuve) => {
+    await db.query('UPDATE tasks SET proof_url = ?, status = ? WHERE id = ?', [urlPreuve, 'done', id]);
+    return { id, proof_url: urlPreuve, status: 'done' };
 };
 
-const validateTask = async (id) => {
-    const [tasks] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
-    if (tasks.length === 0) throw new Error('Task not found');
-    const task = tasks[0];
+const validerTache = async (id) => {
+    const [taches] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
+    if (taches.length === 0) throw new Error('Tâche non trouvée');
+    const tache = taches[0];
 
-    if (task.status === 'validated') throw new Error('Task already validated');
-    if (task.status !== 'done') throw new Error('Task must be in done status to validate');
+    if (tache.status === 'validated') throw new Error('Tâche déjà validée');
+    if (tache.status !== 'done') throw new Error('La tâche doit être terminée pour être validée');
 
-    let pointsAwarded = task.points;
-    let reason = `Task completion: ${task.title}`;
+    let pointsAttribues = tache.points;
+    let raison = `Achèvement de la tâche: ${tache.title}`;
 
-    // Bonus: +20% if finished before deadline
-    if (task.deadline && new Date() < new Date(task.deadline)) {
-        pointsAwarded += Math.round(task.points * 0.2);
-        reason += ' (Early Bonus)';
+    // Bonus: +20% si terminé avant la deadline
+    if (tache.deadline && new Date() < new Date(tache.deadline)) {
+        pointsAttribues += Math.round(tache.points * 0.2);
+        raison += ' (Bonus Anticipation)';
     }
 
-    // Update task status
+    // Mettre à jour le statut de la tâche
     await db.query('UPDATE tasks SET status = ?, validated_at = NOW() WHERE id = ?', ['validated', id]);
 
-    // Log points (only if member_id exists)
-    if (task.member_id) {
-        await scoringService.addPoints(task.team_id, task.member_id, id, pointsAwarded, reason);
+    // Enregistrer les points (seulement si member_id existe)
+    if (tache.member_id) {
+        await serviceDePoints.ajouterPoints(tache.team_id, tache.member_id, id, pointsAttribues, raison);
 
-        // Check streak
-        const streakAwarded = await scoringService.checkStreak(task.member_id);
+        // Vérifier la série
+        const serieAttribuee = await serviceDePoints.verifierSerie(tache.member_id);
 
-        // Broadcast update
-        broadcast({ type: 'TASK_VALIDATED', taskId: id, teamId: task.team_id, points: pointsAwarded, streak: streakAwarded });
+        // Diffuser la mise à jour
+        diffuser({ type: 'TACHE_VALIDEE', idTache: id, idEquipe: tache.team_id, points: pointsAttribues, serie: serieAttribuee });
 
-        return { id, status: 'validated', pointsAwarded, streakAwarded };
+        return { id, statut: 'validated', pointsAttribues, serieAttribuee };
     } else {
-        // No member assigned, just award points to team
-        await scoringService.addPoints(task.team_id, null, id, pointsAwarded, reason);
+        // Aucun membre assigné, attribuer les points à l'équipe
+        await serviceDePoints.ajouterPoints(tache.team_id, null, id, pointsAttribues, raison);
 
-        // Broadcast update
-        broadcast({ type: 'TASK_VALIDATED', taskId: id, teamId: task.team_id, points: pointsAwarded });
+        // Diffuser la mise à jour
+        diffuser({ type: 'TACHE_VALIDEE', idTache: id, idEquipe: tache.team_id, points: pointsAttribues });
 
-        return { id, status: 'validated', pointsAwarded };
+        return { id, statut: 'validated', pointsAttribues };
     }
 };
 
-const getTasks = async (filters) => {
-    let query = `
-        SELECT t.*, m.name as member_name, m.avatar_url as member_avatar, tm.name as team_name
+const obtenirTaches = async (filtres) => {
+    let requete = `
+        SELECT t.*, m.name as nom_membre, m.avatar_url as avatar_membre, tm.name as nom_equipe
         FROM tasks t
         LEFT JOIN members m ON t.member_id = m.id
         LEFT JOIN teams tm ON t.team_id = tm.id
     `;
-    const params = [];
+    const parametres = [];
     const conditions = [];
 
-    if (filters.team_id) {
+    if (filtres.team_id) {
         conditions.push('t.team_id = ?');
-        params.push(filters.team_id);
+        parametres.push(filtres.team_id);
     }
-    if (filters.member_id) {
+    if (filtres.member_id) {
         conditions.push('t.member_id = ?');
-        params.push(filters.member_id);
+        parametres.push(filtres.member_id);
     }
-    if (filters.status) {
+    if (filtres.status) {
         conditions.push('t.status = ?');
-        params.push(filters.status);
+        parametres.push(filtres.status);
     }
 
     if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
+        requete += ' WHERE ' + conditions.join(' AND ');
     }
 
-    const [tasks] = await db.query(query, params);
-    return tasks;
+    const [taches] = await db.query(requete, parametres);
+    return taches;
 };
 
-module.exports = { createTask, updateTask, uploadProof, validateTask, getTasks };
+module.exports = { creerTache, modifierTache, televerserPreuve, validerTache, obtenirTaches };

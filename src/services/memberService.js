@@ -1,41 +1,41 @@
 const db = require('../config/db');
 
-const addMember = async (teamId, userId, name, role, avatarUrl) => {
-    const [result] = await db.query(
+const ajouterMembre = async (idEquipe, idUtilisateur, nom, role, urlAvatar) => {
+    const [resultat] = await db.query(
         'INSERT INTO members (team_id, user_id, name, role, avatar_url) VALUES (?, ?, ?, ?, ?)',
-        [teamId, userId, name, role, avatarUrl]
+        [idEquipe, idUtilisateur, nom, role, urlAvatar]
     );
-    return { id: result.insertId, teamId, userId, name, role, avatarUrl };
+    return { id: resultat.insertId, idEquipe, idUtilisateur, nom, role, urlAvatar };
 };
 
-const removeMember = async (id) => {
+const retirerMembre = async (id) => {
     await db.query('DELETE FROM members WHERE id = ?', [id]);
 };
 
-const updateMember = async (id, name, role, avatarUrl) => {
+const modifierMembre = async (id, nom, role, urlAvatar) => {
     await db.query(
         'UPDATE members SET name = ?, role = ?, avatar_url = ? WHERE id = ?',
-        [name, role, avatarUrl, id]
+        [nom, role, urlAvatar, id]
     );
-    return { id, name, role, avatarUrl };
+    return { id, nom, role, urlAvatar };
 };
 
-const getAllMembers = async (teamId) => {
-    let query = 'SELECT * FROM members';
-    let params = [];
+const obtenirTousLesMembres = async (idEquipe) => {
+    let requete = 'SELECT * FROM members';
+    let parametres = [];
 
-    if (teamId) {
-        query += ' WHERE team_id = ?';
-        params.push(teamId);
+    if (idEquipe) {
+        requete += ' WHERE team_id = ?';
+        parametres.push(idEquipe);
     }
 
-    const [members] = await db.query(query, params);
-    return members;
+    const [membres] = await db.query(requete, parametres);
+    return membres;
 };
 
-const getMemberById = async (id) => {
-    const [members] = await db.query('SELECT * FROM members WHERE id = ?', [id]);
-    return members[0];
+const obtenirMembreParId = async (id) => {
+    const [membres] = await db.query('SELECT * FROM members WHERE id = ?', [id]);
+    return membres[0];
 };
 
-module.exports = { addMember, removeMember, updateMember, getAllMembers, getMemberById };
+module.exports = { ajouterMembre, retirerMembre, modifierMembre, obtenirTousLesMembres, obtenirMembreParId };
