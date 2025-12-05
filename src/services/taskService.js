@@ -15,13 +15,27 @@ const createTask = async (data) => {
 const updateTask = async (id, data) => {
     const fields = [];
     const values = [];
+
+    // Handle member assignment if user_id is provided
+    if (data.user_id) {
+        // Find member_id for this user
+        const [members] = await db.query('SELECT id FROM members WHERE user_id = ?', [data.user_id]);
+        if (members.length > 0) {
+            data.member_id = members[0].id;
+        }
+        delete data.user_id; // Remove from data to avoid column error
+    }
+
     for (const [key, value] of Object.entries(data)) {
         fields.push(`${key} = ?`);
         values.push(value);
     }
     values.push(id);
 
-    await db.query(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, values);
+    if (fields.length > 0) {
+        await db.query(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+
     return { id, ...data };
 };
 
@@ -36,6 +50,7 @@ const validateTask = async (id) => {
     const task = tasks[0];
 
     if (task.status === 'validated') throw new Error('Task already validated');
+    if (task.status !== 'done') throw new Error('Task must be in done status to validate');
 
     let pointsAwarded = task.points;
     let reason = `Task completion: ${task.title}`;
@@ -49,33 +64,48 @@ const validateTask = async (id) => {
     // Update task status
     await db.query('UPDATE tasks SET status = ?, validated_at = NOW() WHERE id = ?', ['validated', id]);
 
-    // Log points
-    await scoringService.addPoints(task.team_id, task.member_id, id, pointsAwarded, reason);
+    // Log points (only if member_id exists)
+    if (task.member_id) {
+        await scoringService.addPoints(task.team_id, task.member_id, id, pointsAwarded, reason);
 
-    // Check streak
-    const streakAwarded = await scoringService.checkStreak(task.member_id);
+        // Check streak
+        const streakAwarded = await scoringService.checkStreak(task.member_id);
 
-    // Broadcast update
-    broadcast({ type: 'TASK_VALIDATED', taskId: id, teamId: task.team_id, points: pointsAwarded, streak: streakAwarded });
+        // Broadcast update
+        broadcast({ type: 'TASK_VALIDATED', taskId: id, teamId: task.team_id, points: pointsAwarded, streak: streakAwarded });
 
-    return { id, status: 'validated', pointsAwarded, streakAwarded };
+        return { id, status: 'validated', pointsAwarded, streakAwarded };
+    } else {
+        // No member assigned, just award points to team
+        await scoringService.addPoints(task.team_id, null, id, pointsAwarded, reason);
+
+        // Broadcast update
+        broadcast({ type: 'TASK_VALIDATED', taskId: id, teamId: task.team_id, points: pointsAwarded });
+
+        return { id, status: 'validated', pointsAwarded };
+    }
 };
 
 const getTasks = async (filters) => {
-    let query = 'SELECT * FROM tasks';
+    let query = `
+        SELECT t.*, m.name as member_name, m.avatar_url as member_avatar, tm.name as team_name
+        FROM tasks t
+        LEFT JOIN members m ON t.member_id = m.id
+        LEFT JOIN teams tm ON t.team_id = tm.id
+    `;
     const params = [];
     const conditions = [];
 
     if (filters.team_id) {
-        conditions.push('team_id = ?');
+        conditions.push('t.team_id = ?');
         params.push(filters.team_id);
     }
     if (filters.member_id) {
-        conditions.push('member_id = ?');
+        conditions.push('t.member_id = ?');
         params.push(filters.member_id);
     }
     if (filters.status) {
-        conditions.push('status = ?');
+        conditions.push('t.status = ?');
         params.push(filters.status);
     }
 

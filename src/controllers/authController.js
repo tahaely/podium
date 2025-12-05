@@ -33,4 +33,14 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await authService.getAllUsers();
+        res.json(users);
+    } catch (error) {
+        console.error('Get all users error:', error);
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+};
+
+module.exports = { register, login, getAllUsers };

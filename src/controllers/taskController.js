@@ -11,7 +11,26 @@ const createTask = async (req, res) => {
 
 const updateTask = async (req, res) => {
     try {
-        const task = await taskService.updateTask(req.params.id, req.body);
+        const updates = { ...req.body };
+
+        // If status is changing to 'doing', assign the current user
+        if (updates.status === 'doing' && req.user && req.user.id) {
+            // We need to get the member_id associated with this user
+            // This assumes the user is a member. Ideally, we should look up the member_id.
+            // However, looking at the schema, members table links user_id.
+            // Let's pass the user_id to the service to handle the lookup or pass member_id if available in token.
+            // The token has { id, email, role }. It doesn't seem to have member_id directly.
+            // But let's check authService/login again.
+            // Login stores: { id: response.data.id ... } which is the USER id.
+            // So we need to find the member_id for this user_id.
+
+            // Actually, let's look at how we can get the member_id.
+            // The service layer might be a better place for this logic if we need a DB lookup.
+            // Let's pass the user_id to the service.
+            updates.user_id = req.user.id;
+        }
+
+        const task = await taskService.updateTask(req.params.id, updates);
         res.json(task);
     } catch (error) {
         res.status(500).json({ message: error.message });

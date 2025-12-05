@@ -22,4 +22,6 @@ router.post(
     authController.login
 );
 
+router.get('/users', require('../middleware/authMiddleware').protect, authController.getAllUsers);
+
 module.exports = router;

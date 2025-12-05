@@ -9,11 +9,16 @@ const getLeaderboard = async (period) => {
     }
 
     const query = `
-        SELECT t.id, t.name, t.color, COALESCE(SUM(pl.points_added), 0) as total_score
+        SELECT 
+            t.id, 
+            t.name as team_name, 
+            t.color as team_color, 
+            COALESCE(SUM(pl.points_added), 0) as total_points,
+            COUNT(DISTINCT CASE WHEN pl.task_id IS NOT NULL THEN pl.task_id END) as completed_tasks
         FROM teams t
         LEFT JOIN points_log pl ON t.id = pl.team_id ${dateCondition}
         GROUP BY t.id
-        ORDER BY total_score DESC
+        ORDER BY total_points DESC
     `;
 
     const [leaderboard] = await db.query(query);
