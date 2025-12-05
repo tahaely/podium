@@ -1,15 +1,15 @@
 const express = require('express');
-const controleurMembre = require('../controllers/memberController');
-const { proteger, admin } = require('../middleware/authMiddleware');
+const memberController = require('../controllers/memberController');
+const { protect, admin } = require('../middleware/authMiddleware');
 
-const routeur = express.Router();
+const router = express.Router();
 
-routeur.route('/')
-    .get(proteger, controleurMembre.obtenirMembres)
-    .post(proteger, admin, controleurMembre.ajouterMembre);
+router.route('/')
+    .get(protect, memberController.getMembers)
+    .post(protect, admin, memberController.addMember);
 
-routeur.route('/:id')
-    .put(proteger, admin, controleurMembre.modifierMembre)
-    .delete(proteger, admin, controleurMembre.supprimerMembre);
+router.route('/:id')
+    .put(protect, admin, memberController.updateMember)
+    .delete(protect, admin, memberController.removeMember);
 
-module.exports = routeur;
+module.exports = router;

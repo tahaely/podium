@@ -1,42 +1,42 @@
 const db = require('../config/db');
 
-const creerEquipe = async (nom, couleur) => {
-    const [resultat] = await db.query(
+const createTeam = async (name, color) => {
+    const [result] = await db.query(
         'INSERT INTO teams (name, color) VALUES (?, ?)',
-        [nom, couleur]
+        [name, color]
     );
-    return { id: resultat.insertId, nom, couleur };
+    return { id: result.insertId, name, color };
 };
 
-const obtenirToutesLesEquipes = async () => {
-    const [equipes] = await db.query('SELECT * FROM teams');
-    return equipes;
+const getAllTeams = async () => {
+    const [teams] = await db.query('SELECT * FROM teams');
+    return teams;
 };
 
-const obtenirEquipeParId = async (id) => {
-    const [equipes] = await db.query('SELECT * FROM teams WHERE id = ?', [id]);
-    if (equipes.length === 0) return null;
+const getTeamById = async (id) => {
+    const [teams] = await db.query('SELECT * FROM teams WHERE id = ?', [id]);
+    if (teams.length === 0) return null;
 
-    const equipe = equipes[0];
+    const team = teams[0];
 
-    // Obtenir les membres
-    const [membres] = await db.query('SELECT * FROM members WHERE team_id = ?', [id]);
-    equipe.membres = membres;
+    // Get members
+    const [members] = await db.query('SELECT * FROM members WHERE team_id = ?', [id]);
+    team.members = members;
 
-    // Calculer le score total (somme des points_log pour cette équipe)
-    const [resultatScore] = await db.query('SELECT SUM(points_added) as total_score FROM points_log WHERE team_id = ?', [id]);
-    equipe.score = resultatScore[0].total_score || 0;
+    // Calculate total score (sum of points_log for this team)
+    const [scoreResult] = await db.query('SELECT SUM(points_added) as total_score FROM points_log WHERE team_id = ?', [id]);
+    team.score = scoreResult[0].total_score || 0;
 
-    return equipe;
+    return team;
 };
 
-const modifierEquipe = async (id, nom, couleur) => {
-    await db.query('UPDATE teams SET name = ?, color = ? WHERE id = ?', [nom, couleur, id]);
-    return { id, nom, couleur };
+const updateTeam = async (id, name, color) => {
+    await db.query('UPDATE teams SET name = ?, color = ? WHERE id = ?', [name, color, id]);
+    return { id, name, color };
 };
 
-const supprimerEquipe = async (id) => {
+const deleteTeam = async (id) => {
     await db.query('DELETE FROM teams WHERE id = ?', [id]);
 };
 
-module.exports = { creerEquipe, obtenirToutesLesEquipes, obtenirEquipeParId, modifierEquipe, supprimerEquipe };
+module.exports = { createTeam, getAllTeams, getTeamById, updateTeam, deleteTeam };

@@ -1,9 +1,9 @@
 const express = require('express');
-const controleurClassement = require('../controllers/leaderboardController');
-const { proteger } = require('../middleware/authMiddleware');
+const leaderboardController = require('../controllers/leaderboardController');
+const { protect } = require('../middleware/authMiddleware');
 
-const routeur = express.Router();
+const router = express.Router();
 
-routeur.get('/', proteger, controleurClassement.obtenirClassement);
+router.get('/', protect, leaderboardController.getLeaderboard);
 
-module.exports = routeur;
+module.exports = router;

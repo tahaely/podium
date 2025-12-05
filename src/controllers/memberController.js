@@ -1,51 +1,42 @@
-const serviceMembre = require('../services/memberService');
+const memberService = require('../services/memberService');
 
-const ajouterMembre = async (req, res) => {
+const addMember = async (req, res) => {
     try {
         const { team_id, user_id, name, role, avatar_url } = req.body;
-        const membre = await serviceMembre.ajouterMembre(team_id, user_id, name, role, avatar_url);
-        res.status(201).json(membre);
-    } catch (erreur) {
-        res.status(500).json({ message: erreur.message });
+        const member = await memberService.addMember(team_id, user_id, name, role, avatar_url);
+        res.status(201).json(member);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 
-const obtenirMembres = async (req, res) => {
+const removeMember = async (req, res) => {
     try {
-        const membres = await serviceMembre.obtenirTousLesMembres(req.query.team_id);
-        res.json(membres);
-    } catch (erreur) {
-        res.status(500).json({ message: erreur.message });
+        await memberService.removeMember(req.params.id);
+        res.json({ message: 'Member removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 
-const obtenirMembre = async (req, res) => {
-    try {
-        const membre = await serviceMembre.obtenirMembreParId(req.params.id);
-        if (!membre) return res.status(404).json({ message: 'Membre non trouvé' });
-        res.json(membre);
-    } catch (erreur) {
-        res.status(500).json({ message: erreur.message });
-    }
-};
-
-const modifierMembre = async (req, res) => {
+const updateMember = async (req, res) => {
     try {
         const { name, role, avatar_url } = req.body;
-        const membre = await serviceMembre.modifierMembre(req.params.id, name, role, avatar_url);
-        res.json(membre);
-    } catch (erreur) {
-        res.status(500).json({ message: erreur.message });
+        const member = await memberService.updateMember(req.params.id, name, role, avatar_url);
+        res.json(member);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 
-const supprimerMembre = async (req, res) => {
+const getMembers = async (req, res) => {
     try {
-        await serviceMembre.retirerMembre(req.params.id);
-        res.json({ message: 'Membre supprimé' });
-    } catch (erreur) {
-        res.status(500).json({ message: erreur.message });
+        const { team_id } = req.query;
+        const members = await memberService.getAllMembers(team_id);
+        res.json(members);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 
-module.exports = { ajouterMembre, obtenirMembres, obtenirMembre, modifierMembre, supprimerMembre };
+module.exports = { addMember, removeMember, updateMember, getMembers };
