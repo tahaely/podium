@@ -1,11 +1,11 @@
-const db = require('../config/db');
+const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const register = async (email, password, role) => {
     try {
         // Vérifier si l'utilisateur existe déjà
-        const [existingUser] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        const [existingUser] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
         if (existingUser.length > 0) {
             throw new Error('User already exists');
         }
@@ -15,7 +15,7 @@ const register = async (email, password, role) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         // Insertion dans la base de données
-        const [result] = await db.query(
+        const [result] = await pool.query(
             'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
             [email, passwordHash, role || 'member']
         );
@@ -29,7 +29,7 @@ const register = async (email, password, role) => {
 
 
 const login = async (email, password) => {
-    const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
         throw new Error('Invalid credentials');
     }
